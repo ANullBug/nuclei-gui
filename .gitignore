@@ -1,0 +1,18 @@
+# 运行时数据（扫描历史、日志、报告，保存在 nuclei 同级 data/ 目录）
+data/
+
+# Python 缓存与虚拟环境
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+
+# 本机特定文件
+Nuclei GUI.lnk
+_user_upload.png
+
+# 系统文件
+Thumbs.db
+.DS_Store

@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nuclei GUI</title>
+<link rel="stylesheet" href="/css/style.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230067c0'/%3E%3Cpath d='M16 7l7 5v8l-7 5-7-5v-8z' fill='none' stroke='white' stroke-width='2'/%3E%3C/svg%3E">
+</head>
+<body>
+<!-- Win11 风格顶部栏 -->
+<header class="titlebar">
+  <div class="titlebar-left">
+    <div class="app-logo">
+      <svg viewBox="0 0 32 32" width="22" height="22"><rect width="32" height="32" rx="7" fill="var(--accent)"/><path d="M16 7l7 5v8l-7 5-7-5v-8z" fill="none" stroke="#fff" stroke-width="2"/></svg>
+    </div>
+    <span class="app-name">Nuclei GUI</span>
+    <span class="app-sub">漏洞扫描器 · 图形化</span>
+    <span class="status-chip" id="engineStatus"><span class="dot"></span><span id="engineStatusText">检测中…</span></span>
+  </div>
+  <div class="titlebar-right">
+    <div class="theme-toggle" id="themeToggle" title="切换深浅色主题">
+      <svg id="iconSun" class="icon-sun" viewBox="0 0 24 24" width="16" height="16"><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" stroke="currentColor" stroke-width="1.6"/></svg>
+      <svg id="iconMoon" class="icon-moon" viewBox="0 0 24 24" width="16" height="16" style="display:none"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
+    </div>
+  </div>
+</header>
+
+<!-- 主体：侧边导航 + 内容 -->
+<div class="shell">
+  <nav class="sidebar">
+    <div class="nav-item active" data-page="scan">
+      <svg viewBox="0 0 24 24" width="18" height="18"><path d="M12 3l8 4v5c0 4.4-3.2 8-8 9-4.8-1-8-4.6-8-9V7z" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M9 12l2 2 4-4" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
+      <span>扫描</span>
+    </div>
+    <div class="nav-item" data-page="history">
+      <svg viewBox="0 0 24 24" width="18" height="18"><path d="M3 12a9 9 0 1 0 3-6.7" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M3 4v5h5M12 7v5l3 3" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
+      <span>历史记录</span>
+      <span class="nav-badge" id="navHistoryBadge" hidden>0</span>
+    </div>
+    <div class="nav-item" data-page="templates">
+      <svg viewBox="0 0 24 24" width="18" height="18"><path d="M4 5a1 1 0 0 1 1-1h6l2 2h6a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
+      <span>模板库</span>
+    </div>
+    <div class="nav-item" data-page="settings">
+      <svg viewBox="0 0 24 24" width="18" height="18"><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M19 12a7 7 0 0 0-.1-1l2-1.5-2-3.5-2.4 1a7 7 0 0 0-1.7-1L14.5 3h-5l-.3 2.5a7 7 0 0 0-1.7 1l-2.4-1-2 3.5 2 1.5a7 7 0 0 0 0 2l-2 1.5 2 3.5 2.4-1a7 7 0 0 0 1.7 1l.3 2.5h5l.3-2.5a7 7 0 0 0 1.7-1l2.4 1 2-3.5-2-1.5c.1-.3.1-.7.1-1z" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
+      <span>设置</span>
+    </div>
+    <div class="nav-footer">
+      <div class="nav-footer-info">
+        <div class="foot-label">引擎</div>
+        <div class="foot-value" id="footEngine">—</div>
+      </div>
+      <div class="nav-footer-info">
+        <div class="foot-label">模板</div>
+        <div class="foot-value" id="footTemplates">—</div>
+      </div>
+    </div>
+  </nav>
+
+  <main class="content">
+    <!-- ============ 扫描页 ============ -->
+    <section class="page active" id="page-scan">
+      <div class="page-head">
+        <h1>扫描</h1>
+        <p class="page-desc">配置目标与模板，运行 nuclei 漏洞扫描</p>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <span class="card-title">目标</span>
+          <div class="seg" id="targetMode">
+            <button class="seg-btn active" data-mode="single">单目标</button>
+            <button class="seg-btn" data-mode="multi">多目标</button>
+          </div>
+        </div>
+        <div id="targetSingleWrap">
+          <input id="targetSingle" class="input" placeholder="例如 https://example.com 或 192.168.1.1" spellcheck="false">
+        </div>
+        <div id="targetMultiWrap" style="display:none">
+          <textarea id="targetMulti" class="textarea" rows="6"
+            placeholder="每行一个目标，例如：&#10;https://example.com&#10;http://192.168.1.10:8080&#10;10.0.0.0/24"></textarea>
+          <div class="field-row" style="margin-top:6px">
+            <button class="btn ghost small" id="btnImportTargets" type="button">导入目标文件</button>
+            <span class="hint">支持每行一个 IP / URL / CIDR 的文本文件（如 .txt/.lst），自动去重并过滤 # 注释行</span>
+          </div>
+          <input type="file" id="targetFileInput" accept=".txt,.lst,.csv,.log,.dat,text/plain" style="display:none">
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <span class="card-title">模板选择</span>
+        </div>
+
+        <!-- 模板树（直接嵌入，可搜索；点选即指定扫描模板） -->
+        <div class="tpl-picker" style="margin-top:4px">
+          <div class="seg" id="scanTplTabSeg">
+            <button class="seg-btn active" data-tab="builtin">内置模板</button>
+            <button class="seg-btn" data-tab="mine">我的模板</button>
+          </div>
+          <div id="scanTplBuiltin">
+            <div class="hint" style="margin:8px 0">在模板树中点选目录或模板即指定扫描范围（默认扫描全部模板）；搜索栏可搜索模板根目录下的所有目录与文件。</div>
+            <input id="scanTplSearch" class="input" placeholder="搜索模板根目录下的目录或文件，如 cve、http/cves…" style="margin-bottom:8px" autocomplete="off" spellcheck="false">
+            <div class="tpl-selected" id="scanSelectedTpl" style="display:none">
+              <span class="tpl-selected-label">当前模板：</span>
+              <code class="tpl-selected-path" id="scanSelectedTplPath"></code>
+              <button class="mini-btn" id="btnClearSelectedTpl" type="button">清除（扫描全部模板）</button>
+            </div>
+            <div class="tpl-tree" id="scanTplTree"><div class="empty"><p>正在加载模板目录…</p></div></div>
+            <div class="tpl-list" id="scanTplResults" style="display:none"></div>
+          </div>
+          <div id="scanTplMine" style="display:none">
+            <div class="hint" style="margin:8px 0">我的自定义模板：点击「使用」即指定该模板扫描。</div>
+            <div class="tpl-list" id="scanMyTplList"><div class="empty"><p>暂无自定义模板</p></div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <span class="card-title">速率与优化</span>
+          <button class="btn ghost small" id="btnToggleOpt" type="button">收起</button>
+        </div>
+        <div id="optWrap">
+          <div class="field-grid">
+            <div class="field">
+              <label for="rl">速率限制 请求/秒 (-rl)</label>
+              <input id="rl" class="input" type="number" min="0" placeholder="150">
+            </div>
+            <div class="field">
+              <label for="cc">并发模板数 (-c)</label>
+              <input id="cc" class="input" type="number" min="1" placeholder="25">
+            </div>
+            <div class="field">
+              <label for="bs">批量主机数 (-bs)</label>
+              <input id="bs" class="input" type="number" min="1" placeholder="25">
+            </div>
+            <div class="field">
+              <label for="to">超时 秒 (-timeout)</label>
+              <input id="to" class="input" type="number" min="1" placeholder="10">
+            </div>
+            <div class="field">
+              <label for="rt">重试次数 (-retries)</label>
+              <input id="rt" class="input" type="number" min="0" placeholder="1">
+            </div>
+            <div class="field">
+              <label for="scanProxy">代理 (-proxy)</label>
+              <input id="scanProxy" class="input" placeholder="http://127.0.0.1:8080">
+            </div>
+          </div>
+          <div class="switch-grid">
+            <label class="switch"><input type="checkbox" id="optFollow"><span class="track"><span class="thumb"></span></span>跟随重定向</label>
+            <label class="switch"><input type="checkbox" id="optHeadless"><span class="track"><span class="thumb"></span></span>Headless 浏览器</label>
+            <label class="switch"><input type="checkbox" id="optSilent" checked><span class="track"><span class="thumb"></span></span>仅输出结果 (silent)</label>
+            <label class="switch"><input type="checkbox" id="optVerbose"><span class="track"><span class="thumb"></span></span>详细输出 (-v)</label>
+            <label class="switch"><input type="checkbox" id="optStoreResp"><span class="track"><span class="thumb"></span></span>保存请求/响应</label>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <span class="card-title">高级参数</span>
+          <button class="btn ghost small" id="btnToggleExtra">展开</button>
+        </div>
+        <div id="extraWrap" style="display:none">
+          <div class="field">
+            <label for="scanHeaders">自定义请求头 (-H)（每行一条，如：Authorization: Bearer xxx）</label>
+            <textarea id="scanHeaders" class="input" rows="3" spellcheck="false" placeholder="Authorization: Bearer xxx&#10;X-Custom: value&#10;Cookie: session=abc"></textarea>
+          </div>
+          <div class="field">
+            <label for="scanExtra">附加原始参数</label>
+            <input id="scanExtra" class="input" placeholder="例如 -fr -system-resolvers -stats（高级用户）">
+          </div>
+        </div>
+      </div>
+
+      <div class="scan-actions">
+        <button class="btn primary large" id="btnStart">
+          <svg viewBox="0 0 24 24" width="16" height="16"><path d="M8 5v14l11-7z" fill="currentColor"/></svg>
+          开始扫描
+        </button>
+        <button class="btn danger large" id="btnStop" disabled>
+          <svg viewBox="0 0 24 24" width="16" height="16"><rect x="6" y="6" width="12" height="12" rx="2" fill="currentColor"/></svg>
+          停止
+        </button>
+        <span class="scan-msg" id="scanMsg"></span>
+      </div>
+
+      <div class="card" id="liveCard" style="display:none">
+        <div class="card-head">
+          <span class="card-title">正在扫描</span>
+          <div class="live-badges">
+            <span class="badge" id="liveState">—</span>
+            <span class="badge accent" id="liveFindings">0 条结果</span>
+          </div>
+        </div>
+        <div class="scan-progress" id="scanProgress">
+          <div class="scan-progress-bar" id="scanProgressBar"></div>
+        </div>
+        <pre class="console" id="liveConsole"></pre>
+      </div>
+    </section>
+
+    <!-- ============ 历史页 ============ -->
+    <section class="page" id="page-history">
+      <div class="page-head">
+        <h1>历史记录</h1>
+        <p class="page-desc">所有扫描记录持久保存在 data/ 目录，重启不丢失</p>
+      </div>
+      <div class="card">
+        <div class="table-wrap">
+          <table class="table" id="historyTable">
+            <thead>
+              <tr>
+                <th>状态</th><th>目标</th><th>过滤条件</th><th>结果</th><th>时间</th><th>操作</th>
+              </tr>
+            </thead>
+            <tbody id="historyBody"></tbody>
+          </table>
+        </div>
+        <div class="empty" id="historyEmpty" hidden>
+          <svg viewBox="0 0 24 24" width="40" height="40"><path d="M3 12a9 9 0 1 0 3-6.7" fill="none" stroke="currentColor" stroke-width="1.4" opacity=".4"/><path d="M3 4v5h5M12 7v5l3 3" fill="none" stroke="currentColor" stroke-width="1.4" opacity=".4"/></svg>
+          <p>还没有扫描记录</p>
+        </div>
+      </div>
+
+      <!-- 详情弹窗 -->
+      <div class="modal-mask" id="detailModal" hidden>
+        <div class="modal win-card">
+          <div class="modal-head">
+            <div>
+              <div class="modal-title" id="detailTitle">扫描详情</div>
+              <div class="modal-sub" id="detailSub"></div>
+            </div>
+            <button class="icon-btn" id="detailClose">
+              <svg viewBox="0 0 24 24" width="18" height="18"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.8"/></svg>
+            </button>
+          </div>
+          <div class="modal-tabs">
+            <button class="mtab active" data-tab="results">结果 <span class="count" id="tabResultCount"></span></button>
+            <button class="mtab" data-tab="log">日志</button>
+            <button class="mtab" data-tab="cmd">命令</button>
+          </div>
+          <div class="modal-body">
+            <div class="mtab-panel active" id="panel-results">
+              <div class="result-toolbar">
+                <span class="filter-label">按严重程度筛选</span>
+                <div class="sev-pills" id="resultSevFilter">
+                  <label class="pill active" data-sev="all"><input type="checkbox" value="all" checked>全部</label>
+                  <label class="pill" data-sev="critical"><input type="checkbox" value="critical">critical</label>
+                  <label class="pill" data-sev="high"><input type="checkbox" value="high">high</label>
+                  <label class="pill" data-sev="medium"><input type="checkbox" value="medium">medium</label>
+                  <label class="pill" data-sev="low"><input type="checkbox" value="low">low</label>
+                  <label class="pill" data-sev="info"><input type="checkbox" value="info">info</label>
+                </div>
+                <button class="btn ghost small" id="btnExport">导出 JSONL</button>
+                <button class="btn ghost small" id="btnExportTxt">导出 TXT</button>
+                <button class="btn ghost small" id="btnExportMd">导出 MD</button>
+                <button class="btn ghost small" id="btnDedupe">去重</button>
+                <button class="btn primary small" id="btnRescan">重新扫描</button>
+              </div>
+              <div class="hint sev-stats" id="resultStats"></div>
+              <div class="table-wrap">
+                <table class="table results" id="resultsTable">
+                  <thead><tr><th>严重度</th><th>模板 / 漏洞名</th><th>目标</th><th>类型</th><th>匹配器</th><th></th></tr></thead>
+                  <tbody id="resultsBody"></tbody>
+                </table>
+              </div>
+              <div class="empty" id="resultsEmpty" hidden><p>无匹配结果</p></div>
+              <div class="hint" style="margin-top:8px">每条结果都可一键「YAML」生成为 nuclei 模板，保存后可在「模板库 → 我的模板」中复用。</div>
+            </div>
+            <div class="mtab-panel" id="panel-log">
+              <pre class="console tall" id="detailLog"></pre>
+            </div>
+            <div class="mtab-panel" id="panel-cmd">
+              <pre class="console cmd" id="detailCmd"></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- YAML 模板编辑器弹窗 -->
+      <div class="modal-mask" id="yamlModal" hidden>
+        <div class="modal yaml-modal">
+          <div class="modal-head">
+            <div>
+              <div class="modal-title">YAML 模板</div>
+              <div class="modal-sub" id="yamlSub"></div>
+            </div>
+            <button class="icon-btn" id="yamlClose">
+              <svg viewBox="0 0 24 24" width="18" height="18"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.8"/></svg>
+            </button>
+          </div>
+          <div class="modal-body">
+            <div class="field">
+              <label for="yamlName">模板文件名（仅字母/数字/下划线/中划线，自动加 .yaml）</label>
+              <input id="yamlName" class="input" spellcheck="false">
+            </div>
+            <textarea id="yamlContent" class="yaml-editor" spellcheck="false"
+              placeholder="YAML 模板内容…"></textarea>
+          </div>
+          <div class="yaml-foot">
+            <button class="btn primary" id="yamlSave">保存模板</button>
+            <button class="btn" id="yamlUse">保存并用于扫描</button>
+            <button class="btn ghost" id="yamlValidate">校验模板</button>
+            <button class="btn ghost" id="yamlCancel">取消</button>
+            <span class="hint" id="yamlMsg" style="margin-left:12px"></span>
+          </div>
+          <div class="hint" id="yamlValidateMsg" style="margin-top:8px;white-space:pre-wrap;font-family:Consolas,monospace;font-size:12px"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 模板页 ============ -->
+    <section class="page" id="page-templates">
+      <div class="page-head">
+        <h1>模板库</h1>
+        <p class="page-desc">查看本机所有 nuclei 模板；支持删除、移动、重命名模板文件</p>
+      </div>
+      <div class="card">
+        <div class="card-head">
+          <span class="card-title">模板列表</span>
+        </div>
+        <div class="hint" id="tplTreeHint">模板库用于查看与维护模板文件：文件可 <b>重命名 / 移动 / 删除</b>（移动目标填相对目录，如 <code>http/cves</code>，留空移到根目录）；选择扫描模板请到「扫描」页的模板树中直接点选。</div>
+        <div class="tpl-tree" id="tplTree">
+          <div class="empty"><p>正在加载模板目录…</p></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head">
+          <span class="card-title">我的模板（可复用）</span>
+          <span class="badge" id="myTplCount">0 个</span>
+          <button class="btn ghost small" id="btnNewTemplate">新建模板</button>
+        </div>
+        <div class="hint">自定义 YAML 模板保存在应用目录（nuclei 同级）的 <code>custom-templates/</code> 下。可从历史漏洞结果生成，也可手工编写；支持查看、修改、删除，扫描时直接复用。</div>
+        <div class="tpl-list" id="myTplList">
+          <div class="empty"><p>暂无自定义模板</p></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 设置页 ============ -->
+    <section class="page" id="page-settings">
+      <div class="page-head">
+        <h1>设置</h1>
+        <p class="page-desc">引擎路径、数据目录与默认扫描参数</p>
+      </div>
+      <div class="card">
+        <div class="card-head"><span class="card-title">引擎</span></div>
+        <div class="field">
+          <label for="setNucleiPath">nuclei 路径</label>
+          <div class="path-row">
+            <input id="setNucleiPath" class="input" placeholder="留空 = 自动检测（同目录 / PATH）">
+            <button class="btn ghost" id="btnDetect">自动检测</button>
+          </div>
+        </div>
+        <div class="field">
+          <label>引擎状态</label>
+          <div class="engine-box" id="engineBox">检测中…</div>
+        </div>
+        <div class="field">
+          <label>数据目录</label>
+          <input id="setDataDir" class="input" readonly placeholder="data/">
+          <div class="hint">数据（配置、历史、结果、日志）保存在应用目录的 data/ 下。将整个应用目录放在 nuclei 同级，即满足「数据保存在 nuclei 同级目录」。</div>
+        </div>
+        <div class="field">
+          <label>模板目录</label>
+          <input id="setTplDir" class="input" readonly>
+          <div class="hint">nuclei 自动识别的模板目录，镜像下载会写入此处。</div>
+        </div>
+        <div class="field">
+          <label>自定义模板目录</label>
+          <input id="setCustomTplDir" class="input" readonly>
+          <div class="hint">「我的模板」保存位置（应用目录下 custom-templates/，即 nuclei 同级）。</div>
+        </div>
+        <div class="field-row">
+          <button class="btn primary" id="btnSaveSettings">保存设置</button>
+        </div>
+        <div class="hint" id="settingsMsg"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <span class="card-title">网络与更新</span>
+          <button class="btn ghost small" id="btnNetCheck">检测网络连通性</button>
+        </div>
+        <div class="hint">GitHub 官方源在国内可能无法直连。更新失败时本工具会自动回退到镜像站（ghfast.top / ghproxy / Gitee 等）下载模板与 nuclei 二进制，无需手动配置。</div>
+        <div class="engine-box" id="netBox">点击「检测网络连通性」查看各源可达性。</div>
+        <div class="field-row" style="margin-top:14px">
+          <button class="btn primary" id="btnUpdateTemplates">更新模板库（官方→镜像）</button>
+          <button class="btn ghost" id="btnMirrorTemplates">强制镜像下载模板</button>
+          <button class="btn primary" id="btnUpdateNuclei">更新 nuclei 引擎</button>
+          <button class="btn ghost" id="btnMirrorNuclei">镜像下载 nuclei</button>
+        </div>
+        <div class="hint" id="updateMsg"></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><span class="card-title">数据备份与恢复</span></div>
+        <div class="hint">一键把「配置 + 扫描历史 + 结果 + 日志 + 自定义模板」打包为 zip 下载保存。恢复时会先自动备份当前数据，再覆盖导入，避免误操作丢失。</div>
+        <div class="field-row" style="margin-top:14px">
+          <button class="btn primary" id="btnBackup">备份数据（下载 zip）</button>
+          <button class="btn ghost" id="btnRestore">恢复数据…</button>
+          <input type="file" id="restoreFile" accept=".zip" style="display:none">
+        </div>
+        <div class="hint" id="backupMsg"></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><span class="card-title">默认扫描参数</span></div>
+        <div class="field-grid">
+          <div class="field"><label for="defRate">默认速率限制 (-rl)</label><input id="defRate" class="input" type="number" min="0" placeholder="150"></div>
+          <div class="field"><label for="defConc">默认并发 (-c)</label><input id="defConc" class="input" type="number" min="1" placeholder="25"></div>
+          <div class="field"><label for="defBulk">默认批量 (-bs)</label><input id="defBulk" class="input" type="number" min="1" placeholder="25"></div>
+          <div class="field"><label for="defTimeout">默认超时 (-timeout)</label><input id="defTimeout" class="input" type="number" min="1" placeholder="10"></div>
+          <div class="field"><label for="defRetries">默认重试 (-retries)</label><input id="defRetries" class="input" type="number" min="0" placeholder="1"></div>
+        </div>
+        <label class="switch"><input type="checkbox" id="defCheckUpdate" checked><span class="track"><span class="thumb"></span></span>允许 nuclei 自动检查更新（-duc 反选）</label>
+        <div class="hint">默认参数会在新建扫描时自动带入，可随时在扫描页单独修改。</div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="/js/app.js"></script>
+</body>
+</html>

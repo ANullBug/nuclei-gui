@@ -1,0 +1,19 @@
+id: my-custom-template
+
+info:
+  name: 我的自定义模板
+  author: nuclei-gui
+  severity: info
+  description: |
+    在此编写你的检测逻辑。
+  tags: custom
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+    matchers-condition: and
+    matchers:
+      - type: status
+        status:
+          - 200
